@@ -1059,7 +1059,7 @@ class Client(threading.local):
                 server.mark_dead(msg)
             return 0
 
-    def _get(self, cmd, key, t=None):
+    def _get(self, cmd, key):
         key = self._encode_key(key)
         if self.do_check_key:
             self.check_key(key)
@@ -1090,10 +1090,7 @@ class Client(threading.local):
                 if not rkey:
                     return None
                 try:
-                    if t == 'my':
-                        value = self._my_recv_value(server, flags, rlen)
-                    else:
-                        value = self._recv_value(server, flags, rlen)
+                    value = self._recv_value(server, flags, rlen)
                 finally:
                     server.expect(b"END", raise_exception=True)
             except (_Error, socket.error) as msg:
@@ -1122,13 +1119,6 @@ class Client(threading.local):
         @return: The value or None.
         '''
         return self._get('get', key)
-
-    def myget(self, key):
-        '''Retrieves a key from the memcache.
-
-        @return: The value or None.
-        '''
-        return self._get('get', key, t='my')
 
     def gets(self, key):
         '''Retrieves a key from the memcache. Used in conjunction with 'cas'.
@@ -1293,11 +1283,6 @@ class Client(threading.local):
             raise ValueError('Unknown flags on get: %x' % flags)
 
         return val
-
-    def _my_recv_value(self, server, flags, rlen):
-        rlen += 2  # include \r\n
-        buf = server.recv(rlen)
-        return buf
 
     def check_key(self, key, key_extra_len=0):
         """Checks sanity of key.
